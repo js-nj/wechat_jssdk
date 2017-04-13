@@ -16,7 +16,6 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '')));
 app.set('views', path.join(__dirname, 'demo'));
-//app.set('view engine', 'ejs');
 app.set('view engine', 'html');
 app.engine('html', require('ejs-mate'));
 app.locals._layoutFile = 'layout.html';
