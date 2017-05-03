@@ -9,6 +9,9 @@ var https = require('https')
 var http = require('http').Server(app);
 
 var sign = require('./sign.js');
+var corpData = require('./corpData.js')
+
+var tokenData = {}
 
 app.use(bodyParser.urlencoded({
 	extended: false
@@ -36,26 +39,50 @@ app.get('/',function (req, res) {
 
 app.post('/checkSign', function (req, res) {
   var configUrl = req.body.url
-  if (!configUrl) {
-
-  }
-  getAccessToken(function(resp, data) {
-    var access_token = data.access_token
-    getJsapiTicket(access_token, function (resp, data) {
-      var ticket = data.ticket
-      var signatureInfo = sign(ticket, configUrl)
-      var respData = {
-        code: '0',
-        data: signatureInfo
+  var corpName = req.body.corp || 'amptest'
+  // 判断缓存内， 是否有当前corp的ticket信息
+  if (tokenData[corpName]) {
+    var ticket = tokenData[corpName]['ticket']
+    var signatureInfo = sign(ticket, configUrl)
+    var respData = {
+      code: '0',
+      data: signatureInfo
+    }
+    res.end(JSON.stringify(respData))
+  } else {
+    getAccessToken(corpName, function(access_token) {
+      // 缓存access_token
+      tokenData[corpName] = {
+        accessToken: access_token
       }
-      res.end(JSON.stringify(respData))
-    }) 
-  })
+      // 设置access_token的有效期为2小时
+      setDuration(corpName)
+      getJsapiTicket(access_token, function (ticket) {
+        // 缓存ticket
+        tokenData[corpName]['ticket'] = ticket
+        var signatureInfo = sign(ticket, configUrl)
+        var respData = {
+          code: '0',
+          data: signatureInfo
+        }
+        res.end(JSON.stringify(respData))
+      }) 
+    })
+  }
 });
 
 http.listen('8888', function () {
 	console.log('listen 8888 success')
 });
+
+function setDuration (corpName) {
+  clearTimeout(tokenData[corpName]['timer'])
+  tokenData[corpName]['timer'] = setTimeout(function () {
+    if (tokenData[corpName]) {
+      delete tokenData[corpName]
+    }
+  }, (120 * 60 - 10) * 1000)
+}
 
 function getJsapiTicket (access_token, success) {
   var options = {
@@ -63,18 +90,31 @@ function getJsapiTicket (access_token, success) {
     path: '/cgi-bin/get_jsapi_ticket?access_token=' + access_token,
     method: 'GET'
   }
-  request(options, success)
+  request(options, function (res, data) {
+    success(data.ticket)
+  })
 }
 
-function getAccessToken (success){
-    var corpid = 'wxac48a3d1834f4605'
-    var corpsecret = 'st6U_FE8gukEFan32oNVUONT8HNtLhy0Fn_cdE8SzIVW6YGcKobGLaEbSa6aOOtx'
+/**
+ * 获取accessToken
+ * @param {String} corpName
+ * @param {Function} success - callback
+ */
+function getAccessToken (corpName, success){
+  if (access_token) {
+    success(access_token)
+  } else {
+    var corpid = corpData[corpName]['corpid']
+    var corpsecret = corpData[corpName]['corpsecret']
     var options = {
 	    host: 'qyapi.weixin.qq.com',
 	    path: '/cgi-bin/gettoken?corpid=' + corpid +  '&corpsecret=' + corpsecret,
 	    method: 'GET'
     };
-    request(options, success)
+    request(options, function (res, data) {
+      success(data.access_token)
+    })
+  }
 }
 
 function request (options, cb) {
