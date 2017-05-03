@@ -42,14 +42,17 @@ app.post('/checkSign', function (req, res) {
   var corpName = req.body.corp || 'amptest'
   // 判断缓存内， 是否有当前corp的ticket信息
   if (tokenData[corpName]) {
+    // console.log('cache')
     var ticket = tokenData[corpName]['ticket']
     var signatureInfo = sign(ticket, configUrl)
+    signatureInfo.corpId = corpData[corpName]['corpid']
     var respData = {
       code: '0',
       data: signatureInfo
     }
     res.end(JSON.stringify(respData))
   } else {
+    // console.log('request')
     getAccessToken(corpName, function(access_token) {
       // 缓存access_token
       tokenData[corpName] = {
@@ -61,6 +64,7 @@ app.post('/checkSign', function (req, res) {
         // 缓存ticket
         tokenData[corpName]['ticket'] = ticket
         var signatureInfo = sign(ticket, configUrl)
+        signatureInfo.corpId = corpData[corpName]['corpid']
         var respData = {
           code: '0',
           data: signatureInfo
@@ -75,6 +79,10 @@ http.listen('8888', function () {
 	console.log('listen 8888 success')
 });
 
+/**
+ * 设置有效期为 两小时-10s
+ * @param {*} corpName 
+ */
 function setDuration (corpName) {
   clearTimeout(tokenData[corpName]['timer'])
   tokenData[corpName]['timer'] = setTimeout(function () {
@@ -84,6 +92,11 @@ function setDuration (corpName) {
   }, (120 * 60 - 10) * 1000)
 }
 
+/**
+ * 获取ticket
+ * @param {*} access_token 
+ * @param {*} success - callback
+ */
 function getJsapiTicket (access_token, success) {
   var options = {
     host: 'qyapi.weixin.qq.com',
@@ -101,8 +114,8 @@ function getJsapiTicket (access_token, success) {
  * @param {Function} success - callback
  */
 function getAccessToken (corpName, success){
-  if (access_token) {
-    success(access_token)
+  if (tokenData[corpName]) {
+    success(tokenData[corpName]['accessToken'])
   } else {
     var corpid = corpData[corpName]['corpid']
     var corpsecret = corpData[corpName]['corpsecret']
@@ -117,6 +130,11 @@ function getAccessToken (corpName, success){
   }
 }
 
+/**
+ * 发起请求
+ * @param {*} options 
+ * @param {*} cb 
+ */
 function request (options, cb) {
   var request = https.request(options, function(res) {
 	    res.setEncoding('utf8');
