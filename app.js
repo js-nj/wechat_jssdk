@@ -8,10 +8,12 @@ var path = require('path')
 var https = require('https')
 var http = require('http').Server(app);
 
+var common = require('./common.js')
 var sign = require('./sign.js');
 var corpData = require('./corpData.js')
+var contactsManage = require('./contactsManage.js')
 
-var tokenData = {}
+global.tokenData = {}
 
 app.use(bodyParser.urlencoded({
 	extended: false
@@ -36,12 +38,12 @@ app.get('/',function (req, res) {
   res.render('index.html')
 })
 
-
+// 获取jsapi签名
 app.post('/checkSign', function (req, res) {
   var configUrl = req.body.url
   var corpName = req.body.corp || 'amptest'
   // 判断缓存内， 是否有当前corp的ticket信息
-  if (tokenData[corpName]) {
+  if (global.tokenData[corpName]) {
     // console.log('cache')
     var ticket = tokenData[corpName]['ticket']
     var signatureInfo = sign(ticket, configUrl)
@@ -53,16 +55,16 @@ app.post('/checkSign', function (req, res) {
     res.end(JSON.stringify(respData))
   } else {
     // console.log('request')
-    getAccessToken(corpName, function(access_token) {
+    common.getAccessToken(corpName, function(access_token) {
       // 缓存access_token
-      tokenData[corpName] = {
+      global.tokenData[corpName] = {
         accessToken: access_token
       }
       // 设置access_token的有效期为2小时
       setDuration(corpName)
       getJsapiTicket(access_token, function (ticket) {
         // 缓存ticket
-        tokenData[corpName]['ticket'] = ticket
+        global.tokenData[corpName]['ticket'] = ticket
         var signatureInfo = sign(ticket, configUrl)
         signatureInfo.corpId = corpData[corpName]['corpid']
         var respData = {
@@ -75,6 +77,9 @@ app.post('/checkSign', function (req, res) {
   }
 });
 
+// 导入部门
+app.post('/importDept', contactsManage.importDept)
+
 http.listen('8888', function () {
 	console.log('listen 8888 success')
 });
@@ -84,10 +89,10 @@ http.listen('8888', function () {
  * @param {*} corpName 
  */
 function setDuration (corpName) {
-  clearTimeout(tokenData[corpName]['timer'])
-  tokenData[corpName]['timer'] = setTimeout(function () {
-    if (tokenData[corpName]) {
-      delete tokenData[corpName]
+  clearTimeout(global.tokenData[corpName]['timer'])
+  global.tokenData[corpName]['timer'] = setTimeout(function () {
+    if (global.tokenData[corpName]) {
+      delete global.tokenData[corpName]
     }
   }, (120 * 60 - 10) * 1000)
 }
@@ -103,48 +108,9 @@ function getJsapiTicket (access_token, success) {
     path: '/cgi-bin/get_jsapi_ticket?access_token=' + access_token,
     method: 'GET'
   }
-  request(options, function (res, data) {
+  common.request(options, function (res, data) {
     success(data.ticket)
   })
 }
 
-/**
- * 获取accessToken
- * @param {String} corpName
- * @param {Function} success - callback
- */
-function getAccessToken (corpName, success){
-  if (tokenData[corpName]) {
-    success(tokenData[corpName]['accessToken'])
-  } else {
-    var corpid = corpData[corpName]['corpid']
-    var corpsecret = corpData[corpName]['corpsecret']
-    var options = {
-	    host: 'qyapi.weixin.qq.com',
-	    path: '/cgi-bin/gettoken?corpid=' + corpid +  '&corpsecret=' + corpsecret,
-	    method: 'GET'
-    };
-    request(options, function (res, data) {
-      success(data.access_token)
-    })
-  }
-}
 
-/**
- * 发起请求
- * @param {*} options 
- * @param {*} cb 
- */
-function request (options, cb) {
-  var request = https.request(options, function(res) {
-	    res.setEncoding('utf8');
-	    res.on('data', function (data) {
-	      var data = JSON.parse(data);
-	      cb(res,data);
-	    });
-    });	
-    request.on('error', function(e){
-       console.log("error: " + e.message);
-    });
-    request.end();
-}
