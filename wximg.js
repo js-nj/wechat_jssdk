@@ -25,8 +25,25 @@ function uploadImgsToEmap(req, res) {
         headers['Cookie'] = param.cookie;
     }
 
+    var corpName = param.corp || 'amptest';
+    let corp = global.tokenData[corpName];
+
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Content-Type,Content-Length, Authorization, Accept,X-Requested-With');
+
+    let accessToken;
+    if (corp && corp.accessToken) {
+        accessToken = corp.accessToken;
+    }
+    if (!accessToken) {
+        return res.send({
+            success: false,
+            msg: 'accessToken不存在'
+        });
+    }
+
     let config = {
-        accessToken: param.accessToken,
+        accessToken: accessToken,
         fileToken: fileToken,
         scope: scope,
         prePath: param.emapPrefixPath,
@@ -35,7 +52,7 @@ function uploadImgsToEmap(req, res) {
 
     var imgs = param.serverIds.map(function(id) {
         return downloadWxImg({
-            accessToken: param.accessToken,
+            accessToken: accessToken,
             serverId: id,
             fileToken: fileToken,
             scope: scope,
@@ -67,8 +84,7 @@ function uploadImgsToEmap(req, res) {
             filePaths.forEach(function(filePath) {
                 fs.unlinkSync(filePath);
             });
-            res.header('Access-Control-Allow-Origin', '*');
-            res.header('Access-Control-Allow-Headers', 'Content-Type,Content-Length, Authorization, Accept,X-Requested-With');
+
             if (err) {
                 return res.send({
                     success: false

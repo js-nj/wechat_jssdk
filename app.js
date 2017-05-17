@@ -12,6 +12,7 @@ var common = require('./common.js')
 var sign = require('./sign.js');
 var corpData = require('./corpData.js')
 var contactsManage = require('./contactsManage.js')
+var uploadImgsToEmap = require('./wximg.js')
 
 global.tokenData = {}
 
@@ -79,6 +80,10 @@ app.post('/checkSign', function (req, res) {
 
 // 导入部门
 app.post('/importDept', contactsManage.importDept)
+
+app.post('/uploadWxImgsToEmap', uploadImgsToEmap)
+
+app.get('/uploadWxImgsToEmap', uploadImgsToEmap)
 
 http.listen('8888', function () {
 	console.log('listen 8888 success')
