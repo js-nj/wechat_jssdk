@@ -25,6 +25,7 @@ var downloadWxImg = function(config) {
                 var filePath = path.join(__dirname, `${dir}/${fileName}`);
                 fs.writeFile(filePath, imgData, 'binary', function(err) {
                     if (err) {
+                        console.log('下载微信图片失败');
                         resolve(false);
                     } else {
                         resolve(filePath);
@@ -32,6 +33,7 @@ var downloadWxImg = function(config) {
                 });
             });
             res.on('error', function() {
+                console.log('下载微信图片错误');
             	resolve(false);
             });
         });

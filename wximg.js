@@ -81,13 +81,16 @@ function uploadImgsToEmap(req, res) {
             headers: config.headers,
             formData: formData
         }, function(err, httpResponse, body) {
-            filePaths.forEach(function(filePath) {
-                fs.unlinkSync(filePath);
-            });
+            try {
+                filePaths.forEach(function(filePath) {
+                    fs.unlinkSync(filePath);
+                });
+            } catch (e) {}
 
             if (err) {
                 return res.send({
-                    success: false
+                    success: false,
+                    msg: err
                 });
             }
             var saveData = {
@@ -124,12 +127,14 @@ function uploadImgsToEmap(req, res) {
                         });
                     } else {
                         res.send({
-                            success: false
+                            success: false,
+                            msg: '无图片'
                         });
                     }
                 } catch (e) {
                     res.send({
-                        success: false
+                        success: false,
+                        msg: '保存图片失败'
                     });
                 }
             });
