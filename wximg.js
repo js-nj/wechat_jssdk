@@ -28,9 +28,6 @@ function uploadImgsToEmap(req, res) {
     var corpName = param.corp || 'amptest';
     let corp = global.tokenData[corpName];
 
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Content-Type,Content-Length, Authorization, Accept,X-Requested-With');
-
     let accessToken;
     if (corp && corp.accessToken) {
         accessToken = corp.accessToken;

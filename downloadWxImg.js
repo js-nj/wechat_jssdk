@@ -8,7 +8,10 @@ var downloadWxImg = function(config) {
 
         https.get(uri, function(res) {
             var imgData = '';
-
+            var disposition = res.headers['content-disposition'];
+            if (!disposition) {
+                return resolve(false);
+            }
             var fileName = res.headers['content-disposition'].match(/.+(filename=")(.+)?"/)[2];
             res.setEncoding('binary'); //一定要设置response的编码为binary否则会下载下来的图片打不开
 
@@ -34,7 +37,7 @@ var downloadWxImg = function(config) {
             });
             res.on('error', function() {
                 console.log('下载微信图片错误');
-            	resolve(false);
+                resolve(false);
             });
         });
     });
