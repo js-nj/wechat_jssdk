@@ -103,6 +103,12 @@ function uploadImgsToEmap(req, res) {
                 headers: config.headers,
                 formData: saveData
             }, function(error, resp) {
+                if (error) {
+                    return res.send({
+                        success: false,
+                        msg: error
+                    });
+                }
                 try {
                     let respJson = JSON.parse(resp.body);
                     let results = paths.map(function(item, i) {
@@ -120,12 +126,13 @@ function uploadImgsToEmap(req, res) {
                     if (respJson.success) {
                         res.send({
                             success: true,
+                            token: fileToken,
                             results: results
                         });
                     } else {
                         res.send({
                             success: false,
-                            msg: '无图片'
+                            msg: resp.body
                         });
                     }
                 } catch (e) {
