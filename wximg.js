@@ -126,7 +126,6 @@ function uploadImgsToEmap(req, res) {
                     if (respJson.success) {
                         res.send({
                             success: true,
-                            token: fileToken,
                             results: results
                         });
                     } else {
