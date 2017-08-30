@@ -10,6 +10,7 @@ var http = require('http').Server(app);
 
 var common = require('./common.js')
 var sign = require('./sign.js');
+var config = require('./config.js');
 var corpData = require('./corpData.js')
 var contactsManage = require('./contactsManage.js')
 var uploadImgsToEmap = require('./wximg.js')
@@ -77,7 +78,15 @@ app.post('/checkSign', function(req, res) {
     })
   }
 });
-// 服务号获取jsapi签名
+//get test 地址
+app.get('/test', function(req, res) {
+    console.log('test')
+    res.send({
+      code: true,
+      test: '可以正常访问'
+    });
+  })
+  // 服务号获取jsapi签名
 app.post('/serviceAcountCheckSign', function(req, res) {
   var configUrl = req.body.url
   var corpName = req.body.corp || 'amptest'
@@ -105,7 +114,7 @@ app.post('/serviceAcountCheckSign', function(req, res) {
         // 缓存ticket
         global.tokenData[corpName]['ticket'] = ticket
         var signatureInfo = sign(ticket, configUrl)
-        signatureInfo.corpId = corpData[corpName]['corpid']
+        signatureInfo.appId = corpData[corpName]['corpid']
         var respData = {
           code: '0',
           data: signatureInfo
@@ -123,8 +132,8 @@ app.post('/uploadWxImgsToEmap', uploadImgsToEmap)
 
 app.get('/uploadWxImgsToEmap', uploadImgsToEmap)
 
-http.listen('8888', function() {
-  console.log('listen 8888 success')
+http.listen(config, function() {
+  console.log('listen ' + config + ' success')
 });
 
 /**

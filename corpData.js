@@ -14,7 +14,7 @@ module.exports = {
 		'corpsecret': '1ukB8rU_0lLW_xPoanvqVyw50j9Nbr-nLLQVIC4Q3Us'
 	},
 	//电子科技大学 服务号
-	'UESTC': {
+	'uestc': {
 		'corpid': 'wx8ec590de7c6afbfa',
 		'corpsecret': 'e018327a2e32fa91bf37b6157641f1b5'
 	}
